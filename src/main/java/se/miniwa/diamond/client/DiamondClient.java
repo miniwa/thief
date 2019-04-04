@@ -1,9 +1,17 @@
 package se.miniwa.diamond.client;
 
 import com.google.gson.Gson;
+import javafx.geometry.Pos;
 import okhttp3.*;
+import se.miniwa.diamond.Board;
+import se.miniwa.diamond.BoardBot;
+import se.miniwa.diamond.Diamond;
+import se.miniwa.diamond.Position;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DiamondClient {
@@ -22,7 +30,7 @@ public class DiamondClient {
         this.client = client;
     }
 
-    public BoardDto[] getBoards() throws IOException {
+    public List<Board> getBoards() throws IOException {
         Request request = new Request.Builder()
                 .get()
                 .url(getBoardsUrl)
@@ -31,7 +39,13 @@ public class DiamondClient {
         try(Response resp = client.newCall(request).execute()) {
             if(resp.code() == 200) {
                 String json = resp.body().string();
-                return gson.fromJson(json, BoardDto[].class);
+                BoardDto[] boards = gson.fromJson(json, BoardDto[].class);
+
+                List<Board> result = new ArrayList<>();
+                for(BoardDto board : boards) {
+                    result.add(parseBoard(board));
+                }
+                return result;
             } else {
                 throw new IOException("Response unsuccessful." + resp.code());
             }
@@ -93,7 +107,7 @@ public class DiamondClient {
         }
     }
 
-    public void moveBot(String id, String token, String direction) throws IOException, InvalidBotException,
+    public Board moveBot(String id, String token, String direction) throws IOException, InvalidBotException,
             InvalidBoardException {
         HttpUrl url = baseUrl.newBuilder()
                 .addPathSegment("Boards")
@@ -113,7 +127,10 @@ public class DiamondClient {
 
         try(Response resp = client.newCall(request).execute()) {
             int code = resp.code();
-            if(code != 200) {
+            if(code == 200) {
+                String json = resp.body().string();
+                return parseBoard(gson.fromJson(json, BoardDto.class));
+            } else {
                 if(code == 403) {
                     throw new InvalidBotException(
                             "Bot does not exist, is not on the board or is trying to move too fast.");
@@ -126,39 +143,67 @@ public class DiamondClient {
         }
     }
 
-    public class JoinBoardDto {
+    private Board parseBoard(BoardDto dto) {
+
+        List<Diamond> diamonds = new ArrayList<>();
+        for(DiamondDto diamondDto : dto.diamonds) {
+            diamonds.add(parseDiamond(diamondDto));
+        }
+        List<BoardBot> bots = new ArrayList<>();
+        for(BotDto botDto : dto.bots) {
+            bots.add(parseBot(botDto));
+        }
+        return new Board(dto.id, dto.width, dto.height,
+                Duration.ofMillis(dto.minimumDelayBetweenMoves), diamonds, bots);
+    }
+
+    private Diamond parseDiamond(DiamondDto dto) {
+        Position pos = new Position(dto.x, dto.y);
+        return new Diamond(dto.points, pos);
+    }
+
+    private BoardBot parseBot(BotDto dto) {
+        List<BoardBot> bots = new ArrayList<>();
+        Position pos = new Position(dto.position.x, dto.position.y);
+        Position base = new Position(dto.base.x, dto.base.y);
+        Instant nextMoveDate = Instant.parse(dto.nextMoveAvailableAt);
+        Instant roundOverDate = Instant.now().plusMillis(dto.millisecondsLeft);
+        return new BoardBot(dto.name, dto.botId, pos, base, dto.diamonds, dto.score, nextMoveDate, roundOverDate);
+    }
+
+    private class JoinBoardDto {
         public String botToken;
     }
 
-    public class RegisterBotDto {
+    private class RegisterBotDto {
         public String name;
         public String email;
     }
 
-    public class RegisterBotResponseDto {
+    private class RegisterBotResponseDto {
         public String id;
         public String name;
         public String email;
         public String token;
     }
 
-    public class MoveBotDto {
+    private class MoveBotDto {
         public String botToken;
         public String direction;
     }
 
-    public class PositionDto {
+    private class PositionDto {
         public int x;
         public int y;
     }
 
-    public class DiamondDto {
+    private class DiamondDto {
         public int points;
         public int x;
         public int y;
     }
 
-    public class GameObjectDto {
+    private class GameObjectDto {
         public String name;
         public boolean isBlocking;
         public PositionDto position;
@@ -167,7 +212,7 @@ public class DiamondClient {
         public String linkedTeleporterString;
     }
 
-    public class BotDto {
+    private class BotDto {
         public String name;
         public String botId;
         public String timeJoined;
@@ -179,7 +224,7 @@ public class DiamondClient {
         public int score;
     }
 
-    public class BoardDto {
+    private class BoardDto {
         public String id;
         public int width;
         public int height;

@@ -1,6 +1,7 @@
 package se.miniwa;
 
 import okhttp3.OkHttpClient;
+import se.miniwa.diamond.Board;
 import se.miniwa.diamond.client.BoardFullException;
 import se.miniwa.diamond.client.DiamondClient;
 import se.miniwa.diamond.client.DiamondException;
@@ -19,16 +20,16 @@ public class App {
             //String token = client.registerBot(name, email);
             //System.out.println("Token: " + token);
 
-            DiamondClient.BoardDto board = client.getBoards()[0];
+            Board board = client.getBoards().get(0);
             try {
-                client.joinBoard(board.id, token);
+                client.joinBoard(board.getId(), token);
             } catch(BoardFullException ex) {
                 // Ignore
             }
 
             for(int i = 0; i < 10; i++) {
                 try {
-                    client.moveBot(board.id, token, "North");
+                    client.moveBot(board.getId(), token, "North");
                 } catch(InvalidBotException ex) {
                     // Ignore
                 }
