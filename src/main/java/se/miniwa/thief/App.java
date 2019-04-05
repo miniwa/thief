@@ -1,11 +1,11 @@
-package se.miniwa;
+package se.miniwa.thief;
 
 import okhttp3.OkHttpClient;
-import se.miniwa.diamond.Board;
-import se.miniwa.diamond.client.BoardFullException;
-import se.miniwa.diamond.client.DiamondClient;
-import se.miniwa.diamond.client.DiamondException;
-import se.miniwa.diamond.client.InvalidBotException;
+import se.miniwa.thief.game.Board;
+import se.miniwa.thief.game.client.BoardFullException;
+import se.miniwa.thief.game.client.DiamondClient;
+import se.miniwa.thief.game.client.DiamondException;
+import se.miniwa.thief.game.client.InvalidBotException;
 
 import java.io.IOException;
 

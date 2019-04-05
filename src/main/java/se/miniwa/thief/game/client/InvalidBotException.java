@@ -1,4 +1,4 @@
-package se.miniwa.diamond.client;
+package se.miniwa.thief.game.client;
 
 public class InvalidBotException extends DiamondException {
     public InvalidBotException() {

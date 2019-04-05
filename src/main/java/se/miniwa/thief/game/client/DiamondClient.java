@@ -1,12 +1,11 @@
-package se.miniwa.diamond.client;
+package se.miniwa.thief.game.client;
 
 import com.google.gson.Gson;
-import javafx.geometry.Pos;
 import okhttp3.*;
-import se.miniwa.diamond.Board;
-import se.miniwa.diamond.BoardBot;
-import se.miniwa.diamond.Diamond;
-import se.miniwa.diamond.Position;
+import se.miniwa.thief.game.Board;
+import se.miniwa.thief.game.Diamond;
+import se.miniwa.thief.game.Player;
+import se.miniwa.thief.game.Position;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -149,26 +148,40 @@ public class DiamondClient {
         for(DiamondDto diamondDto : dto.diamonds) {
             diamonds.add(parseDiamond(diamondDto));
         }
-        List<BoardBot> bots = new ArrayList<>();
+        List<Player> players = new ArrayList<>();
         for(BotDto botDto : dto.bots) {
-            bots.add(parseBot(botDto));
+            players.add(parsePlayer(botDto));
         }
-        return new Board(dto.id, dto.width, dto.height,
-                Duration.ofMillis(dto.minimumDelayBetweenMoves), diamonds, bots);
+        return Board.builder()
+                .setId(dto.id)
+                .setWidth(dto.width)
+                .setHeight(dto.height)
+                .setMinimumDelayBetweenMoves(Duration.ofMillis(dto.minimumDelayBetweenMoves))
+                .setDiamonds(diamonds)
+                .setPlayers(players)
+                .build();
     }
 
     private Diamond parseDiamond(DiamondDto dto) {
-        Position pos = new Position(dto.x, dto.y);
-        return new Diamond(dto.points, pos);
+        Position pos = Position.create(dto.x, dto.y);
+        return Diamond.create(dto.points, pos);
     }
 
-    private BoardBot parseBot(BotDto dto) {
-        List<BoardBot> bots = new ArrayList<>();
-        Position pos = new Position(dto.position.x, dto.position.y);
-        Position base = new Position(dto.base.x, dto.base.y);
+    private Player parsePlayer(BotDto dto) {
+        Position pos = Position.create(dto.position.x, dto.position.y);
+        Position base = Position.create(dto.base.x, dto.base.y);
         Instant nextMoveDate = Instant.parse(dto.nextMoveAvailableAt);
         Instant roundOverDate = Instant.now().plusMillis(dto.millisecondsLeft);
-        return new BoardBot(dto.name, dto.botId, pos, base, dto.diamonds, dto.score, nextMoveDate, roundOverDate);
+        return Player.builder()
+                .setName(dto.name)
+                .setId(dto.botId)
+                .setPosition(pos)
+                .setBase(base)
+                .setDiamondCount(dto.diamonds)
+                .setScore(dto.score)
+                .setNextMoveAvailableAt(nextMoveDate)
+                .setRoundOverAt(roundOverDate)
+                .build();
     }
 
     private class JoinBoardDto {
