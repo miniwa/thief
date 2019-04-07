@@ -8,6 +8,9 @@ import java.util.List;
 
 @AutoValue
 public abstract class Board {
+    public static final int DEFAULT_WIDTH = 15;
+    public static final int DEFAULT_HEIGHT = 10;
+
     public static Builder builder() {
         return new AutoValue_Board.Builder();
     }
@@ -16,6 +19,7 @@ public abstract class Board {
     public abstract int getWidth();
     public abstract int getHeight();
     public abstract Duration getMinimumDelayBetweenMoves();
+    public abstract Portal getPortal();
     public abstract ImmutableList<Diamond> getDiamonds();
     public abstract ImmutableList<Player> getPlayers();
 
@@ -25,6 +29,7 @@ public abstract class Board {
         public abstract Builder setWidth(int width);
         public abstract Builder setHeight(int height);
         public abstract Builder setMinimumDelayBetweenMoves(Duration minimumDelayBetweenMoves);
+        public abstract Builder setPortal(Portal portal);
         public abstract Builder setDiamonds(List<Diamond> diamonds);
         public abstract Builder setPlayers(List<Player> players);
         public abstract Board build();

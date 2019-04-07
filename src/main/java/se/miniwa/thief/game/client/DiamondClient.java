@@ -2,16 +2,14 @@ package se.miniwa.thief.game.client;
 
 import com.google.gson.Gson;
 import okhttp3.*;
-import se.miniwa.thief.game.Board;
-import se.miniwa.thief.game.Diamond;
-import se.miniwa.thief.game.Player;
-import se.miniwa.thief.game.Position;
+import se.miniwa.thief.game.*;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DiamondClient {
     private Gson gson = new Gson();
@@ -153,7 +151,7 @@ public class DiamondClient {
     }
 
     private Board parseBoard(BoardDto dto) {
-
+        Portal portal = parsePortal(dto.gameObjects);
         List<Diamond> diamonds = new ArrayList<>();
         for(DiamondDto diamondDto : dto.diamonds) {
             diamonds.add(parseDiamond(diamondDto));
@@ -162,11 +160,13 @@ public class DiamondClient {
         for(BotDto botDto : dto.bots) {
             players.add(parsePlayer(botDto));
         }
+
         return Board.builder()
                 .setId(dto.id)
                 .setWidth(dto.width)
                 .setHeight(dto.height)
                 .setMinimumDelayBetweenMoves(Duration.ofMillis(dto.minimumDelayBetweenMoves))
+                .setPortal(portal)
                 .setDiamonds(diamonds)
                 .setPlayers(players)
                 .build();
@@ -175,6 +175,16 @@ public class DiamondClient {
     private Diamond parseDiamond(DiamondDto dto) {
         Position pos = Position.create(dto.x, dto.y);
         return Diamond.create(dto.points, pos);
+    }
+
+    private Portal parsePortal(List<GameObjectDto> dtos) {
+        List<GameObjectDto> portalDtos = dtos.stream()
+                .filter(dto -> dto.name.equals("Teleporter"))
+                .collect(Collectors.toList());
+
+        Position first =  parsePosition(portalDtos.get(0).position);
+        Position second =  parsePosition(portalDtos.get(1).position);
+        return Portal.create(first, second);
     }
 
     private Player parsePlayer(BotDto dto) {
@@ -192,6 +202,10 @@ public class DiamondClient {
                 .setNextMoveAvailableAt(nextMoveDate)
                 .setRoundOverAt(roundOverDate)
                 .build();
+    }
+
+    private Position parsePosition(PositionDto dto) {
+        return Position.create(dto.x, dto.y);
     }
 
     private class JoinBoardDto {

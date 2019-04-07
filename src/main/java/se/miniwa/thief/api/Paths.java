@@ -9,6 +9,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import se.miniwa.thief.api.path.GuessedScoreComparator;
 import se.miniwa.thief.api.path.NavMesh;
+import se.miniwa.thief.api.path.Path;
+import se.miniwa.thief.game.Board;
 import se.miniwa.thief.game.Player;
 import se.miniwa.thief.game.Position;
 import se.miniwa.thief.game.Positionable;
@@ -20,7 +22,7 @@ import java.util.*;
 public final class Paths {
     private static final Logger logger = LogManager.getLogger(Paths.class);
 
-    public static ImmutableList<Position> find(Positionable from, Positionable to, NavMesh navMesh) {
+    public static Path find(Positionable from, Positionable to, NavMesh navMesh) {
         Position fromPos = from.getPosition();
         Position toPos = to.getPosition();
 
@@ -28,8 +30,8 @@ public final class Paths {
         Instant start = Instant.now();
 
         if(fromPos.equals(toPos)) {
-            logger.debug("Finding path between equal position.");
-            return ImmutableList.of(toPos);
+            logger.debug("Finding path between equal positions.");
+            return Path.create(ImmutableList.of(toPos));
         }
 
         if(navMesh.isPositionBlocked(to)) {
@@ -60,7 +62,7 @@ public final class Paths {
                 Duration time = Duration.between(start, Instant.now());
                 logger.debug("Calculated path in: " + time);
 
-                return path;
+                return Path.create(path);
             }
 
             open.remove(node);
@@ -89,22 +91,18 @@ public final class Paths {
     }
 
     public static NavMesh getNavMeshFor(Player player) {
-        logger.debug("Building navmesh");
-        Instant start = Instant.now();
-
-        ImmutableSet.Builder<Position> builder = ImmutableSet.builder();
-        PositionableQuery<Player> opponents = Players.getOpponentsFor(player);
-        if(opponents == null) {
+        Board board = StateHolder.getBoard();
+        if(board == null) {
             return null;
         }
 
+        ImmutableSet.Builder<Position> builder = ImmutableSet.builder();
+        PositionableQuery<Player> opponents = Players.getOpponentsFor(player);
         for(Player opponent : opponents) {
             builder.add(opponent.getPosition(), opponent.getBase());
         }
 
-        Duration time = Duration.between(start, Instant.now());
-        logger.debug("Finished building navmesh in: " + time);
-        return NavMesh.create(15, 12, builder.build());
+        return NavMesh.create(board.getWidth(), board.getHeight(), Portals.getPortal(), builder.build());
     }
 
     private static ImmutableList<Position> rebuildPath(Map<Position, Position> cameFrom, Position to) {

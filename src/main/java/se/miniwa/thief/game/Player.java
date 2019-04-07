@@ -1,6 +1,7 @@
 package se.miniwa.thief.game;
 
 import com.google.auto.value.AutoValue;
+import se.miniwa.thief.api.path.Path;
 
 import java.time.Instant;
 
@@ -19,8 +20,8 @@ public abstract class Player extends AbstractPositionable {
         return getDiamondCount() == MAX_DIAMONDS;
     }
 
-    public boolean isMoveAvailable(Instant now) {
-        return now.isAfter(getNextMoveAvailableAt());
+    public boolean hasReachedDestinationOf(Path path) {
+        return path.getDestination().equals(getPosition());
     }
 
     public abstract String getName();

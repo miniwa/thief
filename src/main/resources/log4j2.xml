@@ -6,7 +6,8 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Root level="debug">
+        <Logger name="se.miniwa.thief.bot" level="debug" />
+        <Root level="warn">
             <AppenderRef ref="Console"/>
         </Root>
     </Loggers>

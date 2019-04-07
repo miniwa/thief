@@ -26,7 +26,7 @@ public class App {
         String name = "miniwa";
         String email = "blarch3030@gmail.com";
         String prodToken = "cfe9692a-ea65-496f-9f20-5bdf8cd4d743";
-        //String testToken = "90bac52d-75c1-435a-a2dc-90db4d99e1d8";
+        String testToken = "90bac52d-75c1-435a-a2dc-90db4d99e1d8";
 
         PlayerBot playerBot = new PlayerBot(client, name, email, prodToken);
         Bot bot = new Bot(playerBot);
