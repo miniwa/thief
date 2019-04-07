@@ -5,7 +5,7 @@ import com.google.auto.value.AutoValue;
 import java.time.Instant;
 
 @AutoValue
-public abstract class Player {
+public abstract class Player extends AbstractPositionable {
     public static final int MAX_DIAMONDS = 5;
     public static Builder builder() {
         return new AutoValue_Player.Builder();
@@ -25,7 +25,10 @@ public abstract class Player {
 
     public abstract String getName();
     public abstract String getId();
+
+    @Override
     public abstract Position getPosition();
+
     public abstract Position getBase();
     public abstract int getDiamondCount();
     public abstract int getScore();

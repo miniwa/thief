@@ -1,4 +1,4 @@
-package se.miniwa.thief.bot;
+package se.miniwa.thief.api;
 
 import se.miniwa.thief.game.Board;
 

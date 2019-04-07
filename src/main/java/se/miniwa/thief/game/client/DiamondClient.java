@@ -16,23 +16,27 @@ import java.util.List;
 public class DiamondClient {
     private Gson gson = new Gson();
     private MediaType jsonType = MediaType.get("application/json");
-    private HttpUrl baseUrl = HttpUrl.parse("http://diamonds.etimo.se/api");
-    private HttpUrl getBoardsUrl = baseUrl.newBuilder()
-            .addPathSegment("Boards")
-            .build();
-    private HttpUrl registerBotUrl = baseUrl.newBuilder()
-            .addPathSegment("Bots")
-            .build();
     private OkHttpClient client;
+    private HttpUrl baseUrl;
 
     public DiamondClient(OkHttpClient client) {
         this.client = client;
+        this.baseUrl = HttpUrl.parse("http://diamonds.etimo.se/api");
+    }
+
+    public DiamondClient(OkHttpClient client, HttpUrl baseUrl) {
+        this.client = client;
+        this.baseUrl = baseUrl;
     }
 
     public List<Board> getBoards() throws IOException {
+        HttpUrl url = baseUrl.newBuilder()
+                .addPathSegment("Boards")
+                .build();
+
         Request request = new Request.Builder()
                 .get()
-                .url(getBoardsUrl)
+                .url(url)
                 .build();
 
         try(Response resp = client.newCall(request).execute()) {
@@ -76,7 +80,7 @@ public class DiamondClient {
                 } else if (code == 404) {
                     throw new InvalidBoardException("Board does not exist.");
                 } else if (code == 409) {
-                    throw new BoardFullException("Board is full or bot is already on the board.");
+                    throw new BoardFullException("Board is full or api is already on the board.");
                 } else {
                     throw new IOException("Unexpected response code " + code + ".");
                 }
@@ -90,8 +94,12 @@ public class DiamondClient {
         registerBot.email = email;
         RequestBody body = RequestBody.create(jsonType, gson.toJson(registerBot));
 
+        HttpUrl url = baseUrl.newBuilder()
+                .addPathSegment("Bots")
+                .build();
+
         Request request = new Request.Builder()
-                .url(registerBotUrl)
+                .url(url)
                 .post(body)
                 .build();
 
@@ -107,7 +115,7 @@ public class DiamondClient {
     }
 
     public Board moveBot(String id, String token, String direction) throws IOException, InvalidBotException,
-            InvalidBoardException {
+            InvalidBoardException, InvalidMoveException {
         HttpUrl url = baseUrl.newBuilder()
                 .addPathSegment("Boards")
                 .addPathSegment(id)
@@ -135,6 +143,8 @@ public class DiamondClient {
                             "Bot does not exist, is not on the board or is trying to move too fast.");
                 } else if (code == 404) {
                     throw new InvalidBoardException("Board does not exist.");
+                } else if(code == 409) {
+                    throw new InvalidMoveException("Move is blocked or not valid.");
                 } else {
                     throw new IOException("Invalid response code " + code + ".");
                 }
