@@ -10,10 +10,7 @@ import org.apache.logging.log4j.Logger;
 import se.miniwa.thief.api.path.GuessedScoreComparator;
 import se.miniwa.thief.api.path.NavMesh;
 import se.miniwa.thief.api.path.Path;
-import se.miniwa.thief.game.Board;
-import se.miniwa.thief.game.Player;
-import se.miniwa.thief.game.Position;
-import se.miniwa.thief.game.Positionable;
+import se.miniwa.thief.game.*;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -25,13 +22,14 @@ public final class Paths {
     public static Path find(Positionable from, Positionable to, NavMesh navMesh) {
         Position fromPos = from.getPosition();
         Position toPos = to.getPosition();
+        Map<Position, Position> cameFrom = new HashMap<>();
 
         logger.debug("Finding path between: " + fromPos + " and " + toPos);
         Instant start = Instant.now();
 
         if(fromPos.equals(toPos)) {
             logger.debug("Finding path between equal positions.");
-            return Path.create(ImmutableList.of(toPos));
+            return rebuildPath(toPos, cameFrom, navMesh);
         }
 
         if(navMesh.isPositionBlocked(to)) {
@@ -43,7 +41,6 @@ public final class Paths {
         Set<Position> open = new HashSet<>();
         open.add(fromPos);
 
-        Map<Position, Position> cameFrom = new HashMap<>();
         Map<Position, Integer> realScores = new HashMap<>();
         realScores.put(fromPos, 0);
 
@@ -58,11 +55,10 @@ public final class Paths {
 
             // Exit if destination found.
             if(node.equals(toPos)) {
-                ImmutableList<Position> path = rebuildPath(cameFrom, toPos);
+                Path path = rebuildPath(toPos, cameFrom, navMesh);
                 Duration time = Duration.between(start, Instant.now());
                 logger.debug("Calculated path in: " + time);
-
-                return Path.create(path);
+                return path;
             }
 
             open.remove(node);
@@ -105,15 +101,23 @@ public final class Paths {
         return NavMesh.create(board.getWidth(), board.getHeight(), Portals.getPortal(), builder.build());
     }
 
-    private static ImmutableList<Position> rebuildPath(Map<Position, Position> cameFrom, Position to) {
+    private static Path rebuildPath(Position to, Map<Position, Position> cameFrom, NavMesh navMesh) {
+        Portal portal = navMesh.getPortal();
+        Position firstExit = portal.getFirstExit();
+        Position secondExit = portal.getSecondExit();
         ImmutableList.Builder<Position> builder = ImmutableList.builder();
         builder.add(to);
 
         Position current = to;
         while(cameFrom.containsKey(current)) {
             current = cameFrom.get(current);
+            if(current.equals(firstExit)) {
+                builder.add(secondExit);
+            } else if(current.equals(secondExit)) {
+                builder.add(firstExit);
+            }
             builder.add(current);
         }
-        return ImmutableList.copyOf(Lists.reverse(builder.build()));
+        return Path.create(ImmutableList.copyOf(Lists.reverse(builder.build())));
     }
 }
